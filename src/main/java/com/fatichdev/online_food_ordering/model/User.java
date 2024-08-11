@@ -27,7 +27,7 @@ public class User {
 
     private String password;
 
-    private USER_ROLE role;
+    private USER_ROLE role = USER_ROLE.ROLE_CUSTOMER;
 
     // @JsonIgnore used to ignore the field when serializing to JSON
     // @OneToMany used to define a one-to-many relationship
