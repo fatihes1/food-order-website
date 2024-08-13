@@ -24,7 +24,6 @@ public class CustomerUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(username);
 
-        // WARNING: TUTOR use user != null in there
         if (user == null) {
             throw new UsernameNotFoundException("User not found with this email " + username);
         }

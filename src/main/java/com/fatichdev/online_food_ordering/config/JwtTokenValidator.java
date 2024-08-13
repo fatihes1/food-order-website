@@ -18,25 +18,33 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class JwtTokenValidator extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
         String jwt = request.getHeader(JwtConstant.JWT_HEADER);
 
-        if (jwt!= null){
+        if (jwt != null && jwt.startsWith("Bearer ")) {
             String token = jwt.substring(7);
             try {
-                SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
-                Claims claims = Jwts.parser()
-                        .verifyWith(key)
+                // Ensure the secret key is the correct length for HS384 (at least 48 bytes)
+                byte[] keyBytes = JwtConstant.SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+                if (keyBytes.length < 48) {
+                    throw new IllegalArgumentException("Secret key must be at least 48 bytes for HS384");
+                }
+
+                SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+
+                Claims claims = Jwts.parserBuilder()
+                        .setSigningKey(key)
                         .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
-                String email = String.valueOf(claims.get("email"));
-                String authorities = String.valueOf(claims.get("authorities"));
+                        .parseClaimsJws(token)
+                        .getBody();
+
+                String email = claims.get("email", String.class);
+                String authorities = claims.get("authorities", String.class);
 
                 List<GrantedAuthority> auth = AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
 
@@ -44,6 +52,8 @@ public class JwtTokenValidator extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
+                // Log the exception for debugging
+                logger.error("Invalid token", e);
                 throw new BadCredentialsException("Invalid token");
             }
         }
