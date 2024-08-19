@@ -6,7 +6,6 @@ import com.fatichdev.online_food_ordering.model.Food;
 import com.fatichdev.online_food_ordering.model.User;
 import com.fatichdev.online_food_ordering.repository.CartItemRepository;
 import com.fatichdev.online_food_ordering.repository.CartRepository;
-import com.fatichdev.online_food_ordering.repository.FoodRepository;
 import com.fatichdev.online_food_ordering.request.AddCartItemRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -128,4 +127,13 @@ public class CartServiceImp implements CartService{
         cart.getItems().clear();
         return cartRepository.save(cart);
     }
+
+    @Override
+    public Cart findCartByUser(User user) throws Exception {
+        Cart cart = cartRepository.findByCustomerId(user.getId());
+        cart.setTotal(calculateCartTotals(cart));
+        return cart;
+    }
+
+
 }
